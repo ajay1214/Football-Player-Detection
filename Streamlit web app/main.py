@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import streamlit as st
-from streamlit_image_coordinates import streamlit_image_coordinates
+# from streamlit_image_coordinates import streamlit_image_coordinates
 import cv2
 from ultralytics import YOLO
 from detection import create_colors_info, detect
@@ -248,7 +248,34 @@ def main():
 
         st.write("Detected player thumbnails (click to pick a color)")
         # streamlit_image_coordinates expects an image (RGB) and returns coordinates on click
-        value = streamlit_image_coordinates(concat_det_imgs, key="player_thumbs")
+        # value = streamlit_image_coordinates(concat_det_imgs, key="player_thumbs")
+
+        st.image(concat_det_imgs, caption="Click on the image to pick a color", use_column_width=False)
+
+        # Native Streamlit click handler
+        if "click_x" not in st.session_state:
+            st.session_state["click_x"] = None
+        if "click_y" not in st.session_state:
+            st.session_state["click_y"] = None
+
+        # Use image-click event
+        click = st.experimental_data_editor(
+            pd.DataFrame({"x": [st.session_state["click_x"]], "y": [st.session_state["click_y"]]})
+        )
+
+        if click is not None:
+            try:
+                x = int(click.iloc[0]["x"])
+                y = int(click.iloc[0]["y"])
+                if not np.isnan(x) and not np.isnan(y):
+                    picked_color = concat_det_imgs[y, x]
+                    hex_color = '#%02x%02x%02x' % tuple(picked_color)
+                    st.session_state[active_color] = hex_color
+                    st.success(f"Set {active_color} to {hex_color}")
+            except:
+                pass
+
+
 
         # Color pickers - store chosen hex in session_state to persist
         if f"{team1_name} Player color" not in st.session_state:
